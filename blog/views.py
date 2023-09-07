@@ -14,6 +14,7 @@ class AboutView(TemplateView):
     template_name = 'blog/about.html'
 
 class PostListView(ListView):
+    redirect_field_name = 'blog:post_list'
     model = Post
 
     def get_queryset(self):
@@ -24,23 +25,23 @@ class PostDetailView(DetailView):
 
 class PostCreateView(LoginRequiredMixin,CreateView):
     login_url = 'login/'
-    redirect_field_name = 'blog/post_detail.html'
+    redirect_field_name = 'blog:post_detail'
     form_class = PostForm
     model = Post
 
 class PostUpdateView(LoginRequiredMixin,UpdateView):
     login_url = 'login/'
-    redirect_field_name = 'blog/post_detail.html'
+    redirect_field_name = 'blog:post_detail'
     form_class = PostForm
     model = Post
 
 class PostDeleteView(LoginRequiredMixin,DeleteView):
     model = Post
-    success_url = reverse_lazy('post_list')
+    success_url = reverse_lazy('blog:post_list')
 
-class PostDraftView(LoginRequiredMixin,ListView):    
+class DraftPostView(LoginRequiredMixin,ListView):    
     login_url = 'login/'
-    redirect_field_name = 'blog/post_detail.html'
+    redirect_field_name = 'blog/post_draft_list.html'
     model = Post
 
     def get_queryset(self):
@@ -53,8 +54,8 @@ class PostDraftView(LoginRequiredMixin,ListView):
 @login_required
 def post_publish(request,pk):
     post = get_object_or_404(Post,pk=pk)
-    post.publish
-    return redirect(request,'post_detail',pk=pk)
+    post.publish()
+    return redirect('blog:post_detail',pk=post.pk)
 
 @login_required
 def add_comment_to_post(request,pk):
@@ -65,7 +66,7 @@ def add_comment_to_post(request,pk):
             comment = form.save(commit=False)
             comment.post = post
             comment.save()
-            return redirect('post_detail',pk=post.pk)
+            return redirect('blog:post_detail',pk=post.pk)
     else:
         form = CommentForm()
     return render(request,'blog/comment_form.html',{'form':form})    
@@ -74,12 +75,12 @@ def add_comment_to_post(request,pk):
 def approve_comment(request,pk):
     comment = get_object_or_404(Comment,pk=pk)
     comment.approve()
-    return redirect('post_detail',pk=comment.post.pk)
+    return redirect('blog:post_detail',pk=comment.post.pk)
 
 @login_required
 def remove_comment(request,pk):
     comment = get_object_or_404(Comment,pk=pk)
     post_pk = comment.post.pk
     comment.delete()
-    return redirect('post_detail',pk=post_pk)
+    return redirect('blog:post_detail',pk=post_pk)
 
